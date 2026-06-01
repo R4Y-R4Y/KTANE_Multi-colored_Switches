@@ -719,8 +719,10 @@ public class MultiColoredSwitches : MonoBehaviour
             {
                 LEDsUp[i].LEDModel.GetComponent<MeshRenderer>().material = LEDColors[7];
                 LEDsDown[i].LEDModel.GetComponent<MeshRenderer>().material = LEDColors[7];
+                LEDsCBIndicator[i].text = "";
+                LEDsCBIndicator[i + 5].text = "";
             }
-            
+            LEDsCBIndicator[10].text = "";
         }
     }
         
