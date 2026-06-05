@@ -97,12 +97,17 @@ public class MultiColoredSwitches : MonoBehaviour
     public GameObject[] SocketModels;
     public GameObject[] LEDModelsUP;
     public GameObject[] LEDModelsDOWN;
+    public TextMesh[] SwitchesCBIndicator;
+    public TextMesh[] SocketsCBIndicator;
+    public TextMesh[] LEDsCBIndicator;
     private Material[] LEDRow1Cycle1 = new Material[5];
     private Material[] LEDRow1Cycle2 = new Material[5];
     private Material[] LEDRow2Cycle1 = new Material[5];
     private Material[] LEDRow2Cycle2 = new Material[5];
     public KMBombModule module;
-	private Coroutine ActiveCoroutine = null;
+    public KMColorblindMode CB;
+    private bool CBBool;
+    private Coroutine ActiveCoroutine = null;
     private List<SwitchGraphs> StateExists = new List<SwitchGraphs>(); //For Breadth First Search Algorithm
     private string LoggingSwitchesStates;
     private bool[] SwitchesStates = new bool[5];
@@ -134,6 +139,7 @@ public class MultiColoredSwitches : MonoBehaviour
     // Use this for initialization
     void Start()
     {
+        CBBool = CB.ColorblindModeActive;
         moduleID = ModuleIDCounter++;
         string[] order = { " first flash of the first row ", " second flash of the first row ", " first flash of the second row ", " second flash of the second row " };
         string[] color = { " red ", " green ", " blue " };
@@ -150,7 +156,21 @@ public class MultiColoredSwitches : MonoBehaviour
             Switches[j].SwitchModel.GetComponent<KMSelectable>().OnInteract += delegate() { CheckSwitchFlip(j); GetComponent<KMAudio>().PlayGameSoundAtTransform(KMSoundOverride.SoundEffect.ButtonPress, Switches[j].SwitchModel.transform); Switches[j].SwitchModel.GetComponent<KMSelectable>().AddInteractionPunch(.25f); return false; };
             ExpectedSwitchesStates[j] = Switches[j].State;
         }
-
+        if (CBBool)
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                SwitchesCBIndicator[2 * i].text = Switches[i].ColorSwitch.ToString();
+                SwitchesCBIndicator[2 * i + 1].text = SwitchesCBIndicator[2 * i].text;
+                if (SwitchesCBIndicator[2 * i].text == "K")
+                {
+                    SwitchesCBIndicator[2 * i].color = Color.white;
+                    SwitchesCBIndicator[2 * i + 1].color = Color.white;
+                }
+                SocketsCBIndicator[2 * i].text = Switches[i].ColorSocket.ToString();
+                SocketsCBIndicator[2 * i + 1].text = SocketsCBIndicator[2 * i].text;
+            }
+        }
         Debug.LogFormat("[Multicolored Switches #{0}] The LED states from top to bottom and in red, green, blue order should be:", moduleID);
         for (int i = 0; i < 12; i++)
         {
@@ -499,7 +519,7 @@ public class MultiColoredSwitches : MonoBehaviour
     }
     void CheckSwitchFlip(int selectedswitch)
     {
-        for(int i=0;i<5;i++)
+        for (int i = 0; i < 5; i++)
             ExpectedSwitchesStates[i] = SwitchesStates[i];
         ExpectedSwitchesStates[selectedswitch] = !Switches[selectedswitch].State;
         if (CheckIfArraysSame(ExpectedSwitchesStates,SubmissionState))
@@ -641,24 +661,54 @@ public class MultiColoredSwitches : MonoBehaviour
                 for (int i = 0; i < 5; i++)
                 {
                     LEDsUp[i].LEDModel.GetComponent<MeshRenderer>().material = LEDRow1Cycle2[i];
+                    if (CBBool)
+                    {
+                        LEDsCBIndicator[i].text = LEDsUp[i].CharColor2.ToString();
+                        LEDsCBIndicator[i].color = LEDsCBIndicator[i].text == "K" ? Color.white : Color.black;
+                    }
+                    else
+                        LEDsCBIndicator[i].text = "";
                 }
                 for (int i = 0; i < 5; i++)
                 {
                     LEDsDown[i].LEDModel.GetComponent<MeshRenderer>().material = LEDRow2Cycle2[i];
+                    if (CBBool)
+                    {
+                        LEDsCBIndicator[i + 5].text = LEDsDown[i].CharColor2.ToString();
+                        LEDsCBIndicator[i + 5].color = LEDsCBIndicator[i + 5].text == "K" ? Color.white : Color.black;
+                    }
+                    else
+                        LEDsCBIndicator[i + 5].text = "";
                 }
                 LEDCycleChecker.GetComponent<MeshRenderer>().material = LEDColors[7];
+                LEDsCBIndicator[10].text = CBBool ? "X" : "";
             }
             else
             {
                 for (int i = 0; i < 5; i++)
                 {
                     LEDsUp[i].LEDModel.GetComponent<MeshRenderer>().material = LEDRow1Cycle1[i];
+                    if (CBBool)
+                    {
+                        LEDsCBIndicator[i].text = LEDsUp[i].CharColor1.ToString();
+                        LEDsCBIndicator[i].color = LEDsCBIndicator[i].text == "K" ? Color.white : Color.black;
+                    }
+                    else
+                        LEDsCBIndicator[i].text = "";
                 }
                 for (int i = 0; i < 5; i++)
                 {
                     LEDsDown[i].LEDModel.GetComponent<MeshRenderer>().material = LEDRow2Cycle1[i];
+                    if (CBBool)
+                    {
+                        LEDsCBIndicator[i + 5].text = LEDsDown[i].CharColor1.ToString();
+                        LEDsCBIndicator[i + 5].color = LEDsCBIndicator[i + 5].text == "K" ? Color.white : Color.black;
+                    }
+                    else
+                        LEDsCBIndicator[i + 5].text = "";
                 }
                 LEDCycleChecker.GetComponent<MeshRenderer>().material = LEDColors[6];
+                LEDsCBIndicator[10].text = CBBool ? "O" : "";
             }
             cycle1 = !cycle1;
             yield return new WaitForSeconds(2.5f);
@@ -669,8 +719,10 @@ public class MultiColoredSwitches : MonoBehaviour
             {
                 LEDsUp[i].LEDModel.GetComponent<MeshRenderer>().material = LEDColors[7];
                 LEDsDown[i].LEDModel.GetComponent<MeshRenderer>().material = LEDColors[7];
+                LEDsCBIndicator[i].text = "";
+                LEDsCBIndicator[i + 5].text = "";
             }
-            
+            LEDsCBIndicator[10].text = "";
         }
     }
         
@@ -1106,11 +1158,46 @@ public class MultiColoredSwitches : MonoBehaviour
     //twitch plays
     #pragma warning disable 414
     private readonly string TwitchHelpMessage = @"!{0} 1 2 3 4 5 [Toggles the specified switches where 1 is leftmost and 5 is rightmost]";
-    #pragma warning restore 414
+#pragma warning restore 414
+    private void ToggleColorblindMode()
+    {
+        if (CBBool)
+        {
+            for (int i = 0; i < 5; i++)
+            {
+                SwitchesCBIndicator[2 * i].text = Switches[i].ColorSwitch.ToString();
+                SwitchesCBIndicator[2 * i + 1].text = SwitchesCBIndicator[2 * i].text;
+                if (SwitchesCBIndicator[2 * i].text == "K")
+                {
+                    SwitchesCBIndicator[2 * i].color = Color.white;
+                    SwitchesCBIndicator[2 * i + 1].color = Color.white;
+                }
+                SocketsCBIndicator[2 * i].text = Switches[i].ColorSocket.ToString();
+                SocketsCBIndicator[2 * i + 1].text = SocketsCBIndicator[2 * i].text;
+            }
+        }
+        else
+        {
+            for (int j = 0; j < 5; j++)
+            {
+                SwitchesCBIndicator[2 * j].text = "";
+                SwitchesCBIndicator[2 * j + 1].text = SwitchesCBIndicator[2 * j].text;
+                SocketsCBIndicator[2 * j].text = "";
+                SocketsCBIndicator[2 * j + 1].text = SocketsCBIndicator[2 * j].text;
+            }
+        }
+    }
     IEnumerator ProcessTwitchCommand(string command)
     {
         string[] parameters = command.Split(new [] { ' ' }, System.StringSplitOptions.RemoveEmptyEntries);
         bool extraitem = false;
+        if (Regex.IsMatch(command.ToUpper(), "^\\s*COLORBLIND\\s*$") || Regex.IsMatch(command.ToUpper(), "^\\s*CB\\s*$"))
+        {
+            CBBool = !CBBool;
+            yield return null;
+            ToggleColorblindMode();
+        }
+        else
         if (Regex.IsMatch(parameters[0], @"^\s*press\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant) || Regex.IsMatch(parameters[0], @"^\s*toggle\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant) || Regex.IsMatch(parameters[0], @"^\s*switch\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant) || Regex.IsMatch(parameters[0], @"^\s*flip\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant))
         {
             extraitem = true;
